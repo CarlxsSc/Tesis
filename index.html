@@ -2,90 +2,609 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Curso CSS</title>
-    <link rel="shortcut icon" href="./imagenes/favicon.jpg" type="image/x-icon">
-    <link rel="stylesheet" href="./css/normalize.css">
+    <title>Avatar Animado</title>
     <link rel="stylesheet" href="./css/estilos.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Face API library -->
+    <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
 </head>
 <body>
-
     <header class="hero">
         <nav class="nav container">
-                <div class="nav__logo">
-                    <h2 class="nav__title">UBB</h2>
-                </div>
+            <div class="nav__logo">
+                <h2 class="nav__title">UBB</h2>
+            </div>
 
-                <ul class="nav__link nav__link--menu">
-                    <li class="nav__items">
-                        <a href="#" class="nav__links">Inicio</a>
-                    </li>
-                    <li class="nav__items">
-                        <a href="#" class="nav__links">Acerca de</a>
-                    </li>
-                    <li class="nav__items">
-                        <a href="#" class="nav__links">Contacto</a>
-                    </li>
-                    <li class="nav__items">
-                        <a href="#" class="nav__links">Blog</a>
-                    </li>
+            <ul class="nav__link nav__link--menu">
+                <li class="nav__items"><a href="#" class="nav__links">Inicio</a></li>
+                <li class="nav__items"><a href="#" class="nav__links">Acerca de</a></li>
+                <li class="nav__items"><a href="#" class="nav__links">Contacto</a></li>
+                <li><img src="./imagenes/close.svg" alt="Cerrar menú" class="nav__close"></li>
+            </ul>
 
-                    <img src="./imagenes/close.svg" alt="" class="nav__close">
-                </ul>
-
-                <div class="nav__menu">
-                    <img src="./imagenes/menu.svg" alt="" class="nav__img">
-                </div>
+            <div class="nav__menu">
+                <img src="./imagenes/menu.svg" alt="Abrir menú" class="nav__img">
+            </div>
         </nav>
 
-        <section class="section hero__container container">
-            <h1 class="hero__title">Genera tu propio avatar virtual.</h1>
-            <p class="hero__paragraph">Imagina y escribe tu propio avatar y crea tus propias animaciones.</p>
-            <a href="#" class="cta">Comienza ahora</a>
+        <section class="hero__container container">
+            <h1 class="hero__title">Avatar Animado</h1>
+            <p class="hero__paragraph">Crea un avatar animado a partir de una imagen y hazlo hablar.</p>
         </section>
     </header>
 
     <main>
-        <section class="container about">
-            <h2 class="subtitle">¿Qué generarás en este sitio web?</h2>
-            <p class="about paragraph">Todo lo necesario y obligatorio de esta IA</p>
+        <section class="about container">
+            <h2 class="subtitle">Crea tu avatar animado</h2>
 
             <div class="about__main">
                 <article class="about__icons">
-                    <img src="./imagenes/shapes.svg" class="about__icon">
-                    <h3 class="about__title">Herramientas</h3>
-                    <p class="about__paragraph">...</p>
+                    <div class="avatar-container">
+                        <canvas id="avatarCanvas" width="400" height="400"></canvas>
+                        <p id="face-status" class="status-message">Sube una imagen para comenzar</p>
+                        <p id="animation-status" class="status-message"></p>
+                    </div>
+                    <button id="uploadAvatar" class="cta">Subir Imagen</button>
+                    <input type="file" id="imageUpload" accept="image/*" style="display: none;">
                 </article>
 
                 <article class="about__icons">
-                    <img src="./imagenes/paint.svg" class="about__icon">
-                    <h3 class="about__title">Animaciones</h3>
-                    <p class="about__paragraph">Podrás elegir, a tu gusto, tu avatar y un video generado por ti. </p>
+                    <h3 class="about__title">Texto a Voz</h3>
+                    <textarea id="textToSpeak" class="text-input" placeholder="Escribe aquí el texto que quieres que diga el avatar..." rows="5"></textarea>
+                    <button id="speakText" class="cta">Hablar</button>
                 </article>
-
-                <article class="about__icons">
-                    <img src="./imagenes/code.svg" class="about__icon">
-                    <h3 class="about__title">Programas</h3>
-                    <p class="about__paragraph">...</p>
-                </article>
-            </div>
-        </section>
-
-        <section class="knowledge">
-            <div class="knowledge__container container">
-                <div class="knowledge__texts">
-                    <h2 class="subtitle">Tu imagen y video</h2>
-                    <p class="knowledge__paragraph">...</p>
-                    <a href="#" class="cta">Generalo tu mism@</a>
-                </div>
-
-                <figure class="knowledge__picture">
-                    <img src="./imagenes/nube.png" class="knowledge__img">
-                </figure>
             </div>
         </section>
     </main>
 
+    <footer class="footer">
+        <section class="footer__container container">
+            <h2 class="footer__title">Universidad del Bío-Bío</h2>
+            <p class="footer__paragraph">Proyecto de Tesis</p>
+        </section>
+    </footer>
+
+    <!-- Direct script to test image upload -->
+    <script>
+        // Global variables for animation
+        let faceData = null;
+        let isAnimating = false;
+        let mouthOpenness = 0;
+        let eyebrowRaise = 0;
+        let eyeOpenness = 1.0;
+        let headTilt = 0;
+        let lastAnimationTime = 0;
+        let animationCanvas = null;
+        let animationCtx = null;
+        let avatarImage = null;
+        let currentViseme = null;
+        let visemeSequence = [];
+        let visemeIndex = 0;
+        let visemeStartTime = 0;
+        let visemeDuration = 0;
+        
+        // Viseme definitions for different mouth shapes
+        const visemes = {
+            'rest': { openness: 0.0, width: 1.0 },
+            'A': { openness: 0.7, width: 1.1 },
+            'E': { openness: 0.5, width: 1.2 },
+            'I': { openness: 0.3, width: 1.3 },
+            'O': { openness: 0.8, width: 0.8 },
+            'U': { openness: 0.6, width: 0.7 },
+            'F': { openness: 0.2, width: 1.0 },
+            'M': { openness: 0.0, width: 1.0 },
+            'S': { openness: 0.3, width: 1.1 },
+            'R': { openness: 0.4, width: 0.9 },
+            'L': { openness: 0.4, width: 1.1 },
+            'T': { openness: 0.2, width: 1.0 },
+            'CH': { openness: 0.3, width: 0.9 }
+        };
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log("DOM loaded, initializing avatar functionality");
+            
+            // Set up image upload button
+            const uploadButton = document.getElementById('uploadAvatar');
+            const fileInput = document.getElementById('imageUpload');
+            const canvas = document.getElementById('avatarCanvas');
+            const ctx = canvas.getContext('2d');
+            const statusElement = document.getElementById('face-status');
+            
+            // Initialize animation canvas
+            animationCanvas = canvas;
+            animationCtx = ctx;
+            
+            if (uploadButton && fileInput) {
+                console.log("Found upload elements, attaching event listeners");
+                
+                uploadButton.addEventListener('click', function() {
+                    console.log("Upload button clicked");
+                    fileInput.click();
+                });
+                
+                fileInput.addEventListener('change', function(event) {
+                    console.log("File input changed");
+                    const file = event.target.files[0];
+                    if (!file) {
+                        console.log("No file selected");
+                        return;
+                    }
+                    
+                    // Check file type
+                    if (!file.type.match('image.*')) {
+                        alert('Por favor, selecciona una imagen válida.');
+                        return;
+                    }
+                    
+                    console.log("Processing image file:", file.name);
+                    statusElement.textContent = 'Cargando imagen...';
+                    
+                    // Create image element for processing
+                    const img = new Image();
+                    img.onload = function() {
+                        console.log("Image loaded successfully");
+                        avatarImage = img;
+                        
+                        // Clear canvas
+                        ctx.clearRect(0, 0, canvas.width, canvas.height);
+                        
+                        // Calculate dimensions to maintain aspect ratio
+                        const scale = Math.min(canvas.width / img.width, canvas.height / img.height);
+                        const x = (canvas.width - img.width * scale) / 2;
+                        const y = (canvas.height - img.height * scale) / 2;
+                        
+                        // Draw image
+                        ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
+                        statusElement.textContent = 'Imagen cargada correctamente';
+                        
+                        // If face-api is available, try to detect face
+                        if (typeof faceapi !== 'undefined') {
+                            statusElement.textContent = 'Detectando rostro...';
+                            
+                            // Load models if needed
+                            Promise.all([
+                                faceapi.nets.tinyFaceDetector.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models'),
+                                faceapi.nets.faceLandmark68Net.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models')
+                            ]).then(function() {
+                                return faceapi.detectSingleFace(img, new faceapi.TinyFaceDetectorOptions())
+                                    .withFaceLandmarks();
+                            }).then(function(detection) {
+                                if (detection) {
+                                    statusElement.textContent = 'Rostro detectado correctamente';
+                                    
+                                    // Store face data for animation
+                                    const box = detection.detection.box;
+                                    const landmarks = detection.landmarks;
+                                    
+                                    // Store face dimensions and position
+                                    faceData = {
+                                        faceWidth: box.width,
+                                        faceHeight: box.height,
+                                        faceX: box.x,
+                                        faceY: box.y,
+                                        landmarks: landmarks,
+                                        mouth: landmarks.getMouth(),
+                                        leftEye: landmarks.getLeftEye(),
+                                        rightEye: landmarks.getRightEye(),
+                                        nose: landmarks.getNose(),
+                                        jawOutline: landmarks.getJawOutline()
+                                    };
+                                    
+                                    // Start subtle idle animation
+                                    startIdleAnimation();
+                                } else {
+                                    statusElement.textContent = 'No se detectó ningún rostro en la imagen';
+                                }
+                            }).catch(function(error) {
+                                console.error("Error detecting face:", error);
+                                statusElement.textContent = 'Error al detectar el rostro';
+                            });
+                        }
+                    };
+                    
+                    img.onerror = function() {
+                        console.error("Error loading image");
+                        statusElement.textContent = 'Error al cargar la imagen';
+                    };
+                    
+                    // Load image from file
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        img.src = e.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                });
+            } else {
+                console.error("Upload elements not found");
+            }
+            
+            // Set up speak button
+            const speakButton = document.getElementById('speakText');
+            if (speakButton) {
+                speakButton.addEventListener('click', function() {
+                    const text = document.getElementById('textToSpeak').value;
+                    if (text && faceData) {
+                        document.getElementById('animation-status').textContent = 'Hablando: ' + text;
+                        
+                        // Generate viseme sequence from text
+                        generateVisemeSequence(text);
+                        
+                        // Start lip sync animation
+                        startLipSyncAnimation();
+                        
+                        // Use browser's speech synthesis if available
+                        if ('speechSynthesis' in window) {
+                            const utterance = new SpeechSynthesisUtterance(text);
+                            utterance.lang = 'es-ES';
+                            utterance.onend = function() {
+                                // Stop animation when speech ends
+                                stopAnimation();
+                                document.getElementById('animation-status').textContent = 'Animación completada';
+                            };
+                            speechSynthesis.speak(utterance);
+                        }
+                    } else if (!faceData) {
+                        alert('Primero debes subir una imagen con un rostro detectado.');
+                    }
+                });
+            }
+        });
+        
+        // Generate viseme sequence from text
+        function generateVisemeSequence(text) {
+            // Enhanced mapping of phonemes to visemes for Spanish
+            const phonemeToViseme = {
+                // Vowels
+                'a': 'A', 'á': 'A', 
+                'e': 'E', 'é': 'E', 
+                'i': 'I', 'í': 'I',
+                'o': 'O', 'ó': 'O', 
+                'u': 'U', 'ú': 'U',
+                
+                // Consonants
+                'b': 'M', 'p': 'M', 'm': 'M',
+                'f': 'F', 'v': 'F',
+                's': 'S', 'z': 'S', 'c': 'S', // 'c' when followed by 'e' or 'i'
+                'r': 'R', 'rr': 'R',
+                'l': 'L', 'll': 'L',
+                't': 'T', 'd': 'T',
+                'n': 'T', 'ñ': 'T',
+                'ch': 'CH', 'y': 'I',
+                'j': 'S', 'g': 'S', // 'g' when followed by 'e' or 'i'
+                'k': 'S', 'q': 'S', // 'q' is always followed by 'u' + vowel
+                'w': 'U', 'x': 'S',
+                
+                // Spaces and punctuation
+                ' ': 'rest', '.': 'rest', ',': 'rest', 
+                '!': 'rest', '?': 'rest', ';': 'rest', 
+                ':': 'rest', '-': 'rest'
+            };
+            
+            // Reset sequence
+            visemeSequence = [];
+            
+            // Add initial rest state
+            visemeSequence.push({ viseme: 'rest', duration: 300 });
+            
+            // Convert text to lowercase for easier processing
+            const lowerText = text.toLowerCase();
+            
+            // Process digraphs first (two-character phonemes)
+            const processedText = [];
+            for (let i = 0; i < lowerText.length; i++) {
+                if (i < lowerText.length - 1) {
+                    const digraph = lowerText.substr(i, 2);
+                    if (digraph === 'll' || digraph === 'rr' || digraph === 'ch') {
+                        processedText.push(digraph);
+                        i++; // Skip the next character
+                        continue;
+                    }
+                }
+                processedText.push(lowerText[i]);
+            }
+            
+            // Generate viseme for each processed phoneme with appropriate duration
+            for (let i = 0; i < processedText.length; i++) {
+                const phoneme = processedText[i];
+                let viseme = phonemeToViseme[phoneme] || 'rest';
+                
+                // Handle context-dependent phonemes
+                if (phoneme === 'c' && i < processedText.length - 1) {
+                    if (processedText[i+1] === 'e' || processedText[i+1] === 'i') {
+                        viseme = 'S'; // 'ce' and 'ci' are pronounced like 's'
+                    } else {
+                        viseme = 'S'; // Otherwise like 'k'
+                    }
+                } else if (phoneme === 'g' && i < processedText.length - 1) {
+                    if (processedText[i+1] === 'e' || processedText[i+1] === 'i') {
+                        viseme = 'S'; // 'ge' and 'gi' are pronounced like 'h'
+                    } else {
+                        viseme = 'S'; // Otherwise like 'g' in 'go'
+                    }
+                }
+                
+                // Determine duration based on phoneme type
+                let duration = 100; // Default duration
+                
+                // Vowels get longer duration
+                if (['a', 'e', 'i', 'o', 'u', 'á', 'é', 'í', 'ó', 'ú'].includes(phoneme)) {
+                    duration = 180;
+                } 
+                // Stressed vowels get even longer duration
+                else if (['á', 'é', 'í', 'ó', 'ú'].includes(phoneme)) {
+                    duration = 220;
+                }
+                // Rolled 'r' sounds get medium duration
+                else if (phoneme === 'rr' || phoneme === 'r') {
+                    duration = 150;
+                }
+                // Spaces and punctuation get longer pauses
+                else if ([' ', '.', ',', '!', '?', ';'].includes(phoneme)) {
+                    duration = phoneme === ' ' ? 80 : 300; // Longer pause for punctuation
+                }
+                
+                visemeSequence.push({ viseme: viseme, duration: duration });
+            }
+            
+            // Add final rest state
+            visemeSequence.push({ viseme: 'rest', duration: 300 });
+            
+            console.log("Generated viseme sequence:", visemeSequence);
+        }
+        
+        // Start lip sync animation
+        function startLipSyncAnimation() {
+            if (visemeSequence.length === 0) return;
+            
+            // Reset animation state
+            isAnimating = true;
+            visemeIndex = 0;
+            visemeStartTime = performance.now();
+            visemeDuration = visemeSequence[0].duration;
+            currentViseme = visemeSequence[0].viseme;
+            
+            // Start animation loop
+            requestAnimationFrame(animationLoop);
+        }
+        
+        // Animation loop
+        function animationLoop(timestamp) {
+            if (!isAnimating) return;
+            
+            // Calculate time since viseme started
+            const elapsed = timestamp - visemeStartTime;
+            
+            // Check if it's time to move to the next viseme
+            if (elapsed >= visemeDuration) {
+                visemeIndex++;
+                
+                // Check if we've reached the end of the sequence
+                if (visemeIndex >= visemeSequence.length) {
+                    // End of sequence, stop animation
+                    isAnimating = false;
+                    return;
+                }
+                
+                // Set new viseme
+                currentViseme = visemeSequence[visemeIndex].viseme;
+                visemeDuration = visemeSequence[visemeIndex].duration;
+                visemeStartTime = timestamp;
+            }
+            
+            // Update mouth shape based on current viseme
+            if (currentViseme && visemes[currentViseme]) {
+                mouthOpenness = visemes[currentViseme].openness;
+            }
+            
+            // Redraw avatar with updated mouth shape
+            redrawAvatar();
+            
+            // Continue animation loop
+            requestAnimationFrame(animationLoop);
+        }
+        
+        // Redraw avatar with current mouth shape
+        function redrawAvatar() {
+            if (!avatarImage || !faceData || !animationCtx) return;
+            
+            // Clear canvas
+            animationCtx.clearRect(0, 0, animationCanvas.width, animationCanvas.height);
+            
+            // Calculate dimensions to maintain aspect ratio
+            const scale = Math.min(animationCanvas.width / avatarImage.width, animationCanvas.height / avatarImage.height);
+            const x = (animationCanvas.width - avatarImage.width * scale) / 2;
+            const y = (animationCanvas.height - avatarImage.height * scale) / 2;
+            
+            // Draw base image
+            animationCtx.drawImage(avatarImage, x, y, avatarImage.width * scale, avatarImage.height * scale);
+            
+            // Draw mouth with current openness
+            if (faceData && faceData.mouth) {
+                const mouth = faceData.mouth;
+                
+                // Get upper and lower lip points
+                const upperLipPoints = mouth.slice(0, 7); // First 7 points are upper lip
+                const lowerLipPoints = mouth.slice(6, 12).concat(mouth[0]); // Last 6 points + first point form lower lip
+                
+                // Calculate mouth center
+                let mouthCenterX = 0;
+                let mouthCenterY = 0;
+                for (let i = 0; i < mouth.length; i++) {
+                    mouthCenterX += mouth[i].x;
+                    mouthCenterY += mouth[i].y;
+                }
+                mouthCenterX /= mouth.length;
+                mouthCenterY /= mouth.length;
+                
+                // Scale mouth coordinates to canvas
+                const mouthX = mouthCenterX * scale + x;
+                const mouthY = mouthCenterY * scale + y;
+                
+                // Calculate mouth width and height
+                const mouthWidth = Math.abs(mouth[0].x - mouth[6].x) * scale;
+                const mouthHeight = Math.abs(mouth[3].y - mouth[9].y) * scale;
+                
+                // Get current viseme parameters
+                const visemeParams = currentViseme ? visemes[currentViseme] : visemes['rest'];
+                const openness = visemeParams.openness;
+                const widthFactor = visemeParams.width;
+                
+                // Save current state
+                animationCtx.save();
+                
+                // Create a clipping region around the mouth area to preserve original lip texture
+                const clipPadding = mouthHeight * 1.5;
+                animationCtx.beginPath();
+                animationCtx.rect(
+                    mouthX - mouthWidth - clipPadding, 
+                    mouthY - mouthHeight - clipPadding,
+                    (mouthWidth + clipPadding) * 2,
+                    (mouthHeight + clipPadding) * 2
+                );
+                animationCtx.clip();
+                
+                // Draw the original image again (this will be our base)
+                animationCtx.drawImage(avatarImage, x, y, avatarImage.width * scale, avatarImage.height * scale);
+                
+                // Apply transformations to mouth area
+                if (openness > 0.1) {
+                    // Create a temporary canvas for mouth manipulation
+                    const tempCanvas = document.createElement('canvas');
+                    const tempCtx = tempCanvas.getContext('2d');
+                    tempCanvas.width = animationCanvas.width;
+                    tempCanvas.height = animationCanvas.height;
+                    
+                    // Draw the mouth area to the temporary canvas
+                    const mouthAreaSize = Math.max(mouthWidth, mouthHeight) * 2;
+                    tempCtx.drawImage(
+                        avatarImage, 
+                        mouthCenterX - mouthAreaSize/2, mouthCenterY - mouthAreaSize/2, mouthAreaSize, mouthAreaSize,
+                        mouthX - mouthAreaSize/2 * scale, mouthY - mouthAreaSize/2 * scale, mouthAreaSize * scale, mouthAreaSize * scale
+                    );
+                    
+                    // Apply distortion to lower lip
+                    animationCtx.save();
+                    
+                    // Draw the lower lip with transformation
+                    animationCtx.beginPath();
+                    animationCtx.moveTo(mouth[6].x * scale + x, mouth[6].y * scale + y);
+                    
+                    // Control points for lower lip curve
+                    const lowerLipControlX1 = mouth[7].x * scale + x;
+                    const lowerLipControlY1 = mouth[7].y * scale + y + (openness * mouthHeight * 0.8);
+                    const lowerLipControlX2 = mouth[8].x * scale + x;
+                    const lowerLipControlY2 = mouth[8].y * scale + y + (openness * mouthHeight * 1.0);
+                    const lowerLipControlX3 = mouth[9].x * scale + x;
+                    const lowerLipControlY3 = mouth[9].y * scale + y + (openness * mouthHeight * 1.0);
+                    const lowerLipControlX4 = mouth[10].x * scale + x;
+                    const lowerLipControlY4 = mouth[10].y * scale + y + (openness * mouthHeight * 0.8);
+                    
+                    // Draw the bezier curve for lower lip
+                    animationCtx.bezierCurveTo(
+                        lowerLipControlX1, lowerLipControlY1,
+                        lowerLipControlX2, lowerLipControlY2,
+                        mouth[9].x * scale + x, lowerLipControlY3
+                    );
+                    animationCtx.bezierCurveTo(
+                        lowerLipControlX4, lowerLipControlY4,
+                        mouth[11].x * scale + x, mouth[11].y * scale + y,
+                        mouth[0].x * scale + x, mouth[0].y * scale + y
+                    );
+                    
+                    // Complete the lower lip path
+                    animationCtx.closePath();
+                    
+                    // Create a gradient for the lower lip shadow
+                    const gradient = animationCtx.createLinearGradient(
+                        mouthX, mouthY,
+                        mouthX, mouthY + mouthHeight * openness
+                    );
+                    gradient.addColorStop(0, 'rgba(0, 0, 0, 0.1)');
+                    gradient.addColorStop(1, 'rgba(0, 0, 0, 0.5)');
+                    
+                    // Fill with semi-transparent black to create shadow inside mouth
+                    animationCtx.fillStyle = gradient;
+                    animationCtx.fill();
+                    
+                    // Draw teeth if mouth is open enough
+                    if (openness > 0.3) {
+                        // Upper teeth
+                        animationCtx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+                        animationCtx.beginPath();
+                        animationCtx.ellipse(
+                            mouthX, 
+                            mouthY - mouthHeight * 0.1, 
+                            mouthWidth * 0.4 * widthFactor, 
+                            mouthHeight * 0.15, 
+                            0, 0, Math.PI
+                        );
+                        animationCtx.fill();
+                        
+                        // Lower teeth
+                        animationCtx.beginPath();
+                        animationCtx.ellipse(
+                            mouthX, 
+                            mouthY + mouthHeight * 0.3 * openness, 
+                            mouthWidth * 0.4 * widthFactor, 
+                            mouthHeight * 0.15, 
+                            0, Math.PI, Math.PI * 2
+                        );
+                        animationCtx.fill();
+                    }
+                    
+                    animationCtx.restore();
+                }
+                
+                // Restore original state
+                animationCtx.restore();
+                
+                // Debug visualization if needed
+                if (false) { // Set to true to see debug points
+                    // Draw mouth points
+                    animationCtx.fillStyle = 'red';
+                    for (let i = 0; i < mouth.length; i++) {
+                        animationCtx.beginPath();
+                        animationCtx.arc(mouth[i].x * scale + x, mouth[i].y * scale + y, 2, 0, Math.PI * 2);
+                        animationCtx.fill();
+                        animationCtx.fillText(i.toString(), mouth[i].x * scale + x + 3, mouth[i].y * scale + y);
+                    }
+                    
+                    // Draw mouth center
+                    animationCtx.fillStyle = 'blue';
+                    animationCtx.beginPath();
+                    animationCtx.arc(mouthX, mouthY, 4, 0, Math.PI * 2);
+                    animationCtx.fill();
+                }
+            }
+        }
+        
+        // Start idle animation
+        function startIdleAnimation() {
+            if (isAnimating) return;
+            isAnimating = true;
+            
+            // Simple idle animation
+            function animate() {
+                if (!isAnimating) return;
+                
+                // Subtle movements for idle state
+                mouthOpenness = 0.1 + Math.sin(Date.now() / 2000) * 0.05;
+                
+                // Redraw
+                redrawAvatar();
+                
+                requestAnimationFrame(animate);
+            }
+            
+            animate();
+        }
+        
+        // Stop animation
+        function stopAnimation() {
+            isAnimating = false;
+        }
+    </script>
 </body>
 </html>
