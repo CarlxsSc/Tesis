@@ -53,7 +53,7 @@ def allowed_file(filename):
 def text_to_speech(text, output_path):
     """Convert text to speech using gTTS"""
     try:
-        tts = gTTS(text=text, lang='en', slow=False)
+        tts = gTTS(text=text, lang='es', slow=False)
         tts.save(output_path)
         return True
     except Exception as e:
