@@ -40,8 +40,11 @@ wav2lip_model/checkpoints/*.pth
 
 # Include important directories but exclude large files
 results/*.mp4
-uploads/*.mp3
-uploads/*.wav
+uploads/*
+
+# Keep directories but exclude their contents
+temp/*
+wav2lip_model/checkpoints/*.pth
 
 # IDE
 .idea/
